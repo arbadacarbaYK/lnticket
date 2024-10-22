@@ -117,7 +117,7 @@ async def api_ticket_make_ticket(data: CreateTicketData, form_id: str):
     nwords = len(re.split(r"\s+", data.ltext))
 
     try:
-        payment_hash, payment_request = await create_invoice(
+        payment = await create_invoice(
             wallet_id=form.wallet,
             amount=data.sats,
             memo=f"ticket with {nwords} words on {form_id}",
@@ -129,7 +129,7 @@ async def api_ticket_make_ticket(data: CreateTicketData, form_id: str):
         ) from exc
 
     ticket = await create_ticket(
-        payment_hash=payment_hash, wallet=form.wallet, data=data
+        payment_hash=payment.payment_hash, wallet=form.wallet, data=data
     )
 
     if not ticket:
@@ -137,7 +137,7 @@ async def api_ticket_make_ticket(data: CreateTicketData, form_id: str):
             status_code=HTTPStatus.NOT_FOUND, detail="LNTicket could not be fetched."
         )
 
-    return {"payment_hash": payment_hash, "payment_request": payment_request}
+    return {"payment_hash": payment.payment_hash, "payment_request": payment.bolt11}
 
 
 @lnticket_api_router.get("/api/v1/tickets/{payment_hash}", status_code=HTTPStatus.OK)
